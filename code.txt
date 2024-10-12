@@ -1,0 +1,140 @@
+class Game {
+public:
+	Game() {
+		srand(time(NULL));
+		init(gamemode());
+		generate();
+		start();
+	}
+private:
+	int take(int bunchNum, int items) {
+		if (bunchNum < 0 || bunchNum >= numberOfBunches) return OUT_OF_BOUNDS;
+		if (bunches[bunchNum] < 1) return EMPTY;
+		if (bunches[bunchNum] < items) return TOO_MANY_ITEMS_TAKEN;
+		if (items < 1) return ZERO_ITEMS_TAKEN;
+		else {
+			bunches[bunchNum] -= items;
+			if (bunches[bunchNum] == 0)
+				notEmpty_iterator--;
+			return SUCCESS;
+		}
+	}
+	void show() {
+		system("cls");
+		cout << "There's next items in bunches:\n";
+		for (int i = 0; i < numberOfBunches; i++) {
+			if (bunches[i] > 0)
+				printf("Bunch #%d: %d items\n", i, bunches[i]);
+		}
+		cout << endl;
+	}
+	void generate() {
+		cout << "Insert count of bunches: ";
+		cin >> numberOfBunches;
+		bunches = new int[numberOfBunches];
+		for (int i = 0; i < numberOfBunches; i++)
+			bunches[i] = rand() % (max - min + 1) + min;
+		notEmpty_iterator = numberOfBunches;
+	}
+	int gamemode() {
+		system("cls");
+		cout << "[[[THE NIM GAME]]]   --->   Igromania: 8/10 | StopGame: 9/10 | PC Gamer: 8/10 \n\n";
+		cout << "Choose gamemode:\n1) Player vs Player\n2) Player vs Computer\n3) Computer vs Computer\n";
+		while (1)
+			switch (_getch() - '0') {
+			case PVP: return PVP;
+			case PVC: return PVC;
+			case CVC: return CVC;
+			default: break;
+			}
+	}
+	void init(int gm) {
+		switch (gm) {
+		case PVP:
+			Players[0] = new Human("Player 1");
+			Players[1] = new Human("Player 2");
+			return;
+		case PVC:
+			Players[0] = new Human("Player");
+			Players[1] = new Computer("Computer");
+			return;
+		case CVC:
+			Players[0] = new Computer("Computer 1");
+			Players[1] = new Computer("Computer 2");
+			return;
+		}
+	}
+	void start() {
+		Player* currentPlayer = Players[0];
+		pair<int, int> pair;
+		while (notEmpty_iterator) {
+			currentPlayer = Players[step % 2];
+			show();
+			//cout << currentPlayer->name << ", insert number of bunch and count of items: ";
+			pair = currentPlayer->move(bunches, numberOfBunches);
+			if (take(pair.first, pair.second) == SUCCESS) {
+				step++;
+			}
+			else {
+				cout << "Wrong move, try again";
+				Sleep(2000);
+			}
+		}
+		cout << currentPlayer->name << " wins!\n";
+	}
+
+	const int max = 10, min = 2;
+	int numberOfBunches, notEmpty_iterator, step = 0;
+	int* bunches;
+	enum STATUS { OUT_OF_BOUNDS = -1, SUCCESS, EMPTY, TOO_MANY_ITEMS_TAKEN, ZERO_ITEMS_TAKEN };
+	enum GAMEMODE { PVP = 1, PVC, CVC };
+
+	class Player {
+	public:
+		const char* name = "";
+		virtual pair<int, int> move(int*, int) = 0;
+	};
+	class Human : public Player {
+	public:
+		Human(const char* name) { this->name = name; }
+		pair<int, int> move(int* array, int size) override {
+			int bunch, items;
+			cout << name << ", insert number of bunch and count of items: ";
+			cin >> bunch >> items;
+			return { bunch, items };
+		}
+	};
+	class Computer : public Player {
+	public:
+		Computer(const char* name) { this->name = name; }
+		pair<int, int> move(int* array, int size) override {
+			cout << name << ", insert number of bunch and count of items: ";
+			for (int i = 0; i < size; i++) {
+				if (array[i] > 0) {
+					for (int j = array[i]; j > 0; j--) {
+						int xorSum = array[0];
+						for (int k = 1; k < size; k++)
+							xorSum = xorSum ^ (k != i ? array[k] : array[k] - j);
+						if (!xorSum) {
+							Sleep(1000);
+							cout << i << " " << j << endl;
+							Sleep(2000);
+							return { i,j };
+						}
+					}
+				}
+			}
+			for (int i = 0; i < size; i++)
+				if (array[i] > 0) {
+					int j = rand() % array[i] + 1;
+					Sleep(1000);
+					cout << i << " " << j << endl;
+					Sleep(2000);
+					return { i,j };
+				}
+
+		}
+	};
+
+	Player* Players[2];
+};
